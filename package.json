@@ -1,0 +1,26 @@
+{
+  "name": "gcs_chat",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/herokinkon/gcs_chat.git"
+  },
+  "keywords": [
+    "gcs_chat"
+  ],
+  "author": "HD",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/herokinkon/gcs_chat/issues"
+  },
+  "homepage": "https://github.com/herokinkon/gcs_chat#readme",
+  "dependencies": {
+    "express": "^4.16.2",
+    "socket.io": "^2.0.4"
+  }
+}
