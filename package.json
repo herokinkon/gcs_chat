@@ -20,7 +20,10 @@
   },
   "homepage": "https://github.com/herokinkon/gcs_chat#readme",
   "dependencies": {
+    "body-parser": "^1.18.2",
     "express": "^4.16.2",
+    "express-session": "^1.15.6",
+    "mustache": "^2.3.0",
     "socket.io": "^2.0.4"
   }
 }
