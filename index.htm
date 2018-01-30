@@ -43,7 +43,22 @@
   <form action="/login" method="post">
     <input type="text" name="name" id="name" value="" placeholder="Enter your name!">
     <button type="submit" name="button">Let me chat!</button>
+    <p></p>
+    <input type="file" id="avatar" name="avatar" onchange="validate_fileupload(this.value);">
   </form>
 </body>
+
+<script>
+  function validate_fileupload(fileName) {
+    var allowed_extensions = ["jpg", "png", "gif", "ico"];
+    var file_extension = fileName.split('.').pop().toLowerCase();
+
+    for (var i = 0; i <= allowed_extensions.length; i++) {
+      if (allowed_extensions.indexOf(file_extension) == -1) {
+        document.getElementById('avatar').value = "";
+      }
+    }
+  }
+</script>
 
 </html>

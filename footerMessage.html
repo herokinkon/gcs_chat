@@ -20,18 +20,7 @@
         <div class="row">
             <nav class="col-md-2 d-none d-md-block bg-light sidebar">
                 <div class="sidebar-sticky">
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link active" href="#">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                    stroke-linecap="round" stroke-linejoin="round" class="feather feather-home">
-                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                                </svg>
-                                Dashboard
-                                <span class="sr-only">(current)</span>
-                            </a>
-                        </li>
+                    <ul id="userGroup" class="nav flex-column">
                     </ul>
                 </div>
             </nav>
@@ -70,6 +59,35 @@
         });
     </script>
 
+    <script>
+        var socket = io();
+        socket.emit('joinChat', '');
+
+        // Add user
+        socket.on('lstUser', (data) => {
+            var users = JSON.parse(data);
+            users.forEach(user => {
+                var template = document.getElementById('userItem').innerHTML;
+                var temp = Mustache.render(template, user);
+                var node = document.createRange().createContextualFragment(temp);
+                document.getElementById('userGroup').appendChild(node);
+            });
+        });
+
+        // Add user
+        socket.on('newUser', (data) => {
+            var template = document.getElementById('userItem').innerHTML;
+            var temp = Mustache.render(template, data);
+            var node = document.createRange().createContextualFragment(temp);
+            document.getElementById('userGroup').appendChild(node);
+        });
+
+        // Remoev user
+        socket.on('rmUser', (data) => {
+            document.getElementById(data).remove();
+        });
+    </script>
+
     <script type="text/template" id="msgLine">
         <div class="d-flex align-items-center p-2 mt-1 rounded box-shadow">
             <img class="mr-3" src="kinkon241992.jpg" alt="" width="48" height="48">
@@ -84,5 +102,14 @@
                 </p>
             </div>
         </div>
+    </script>
+
+    <script type="text/template" id="userItem">
+        <li id="{{id}}" class="nav-item">
+            <a class="nav-link active pb-1 pt-0" href="#">
+                <img class="mr-1" src="avatar/{{avatar}}" alt="" width="32" height="32"> {{userName}}
+                <span class="sr-only">(current)</span>
+            </a>
+        </li>
     </script>
 </body>

@@ -22,26 +22,48 @@ app.use(body.urlencoded({
 app.use(express.static('public'));
 
 app.get('/', (req, res) => {
-    res.sendfile('index.htm');
+    if (req.session.user != null) {
+        res.sendfile('footerMessage.html');
+    } else {
+        res.sendfile('index.htm');
+    }
 });
 
 var sess;
 app.post('/login', (req, res) => {
-    if (users.indexOf(req.body.name) > -1) {
+    if (userNames.indexOf(req.body.name) > -1) {
         res.send('Existed user');
     } else {
         req.session.ip = req.ip;
         req.session.user = req.body.name;
+        req.session.avatar = 'kinkon241992.jpg';
         sess = req.session;
-        users.push(req.body.name);
+        userNames.push(req.body.name);
+        listUsers.push({
+            id: sess.id,
+            userName: req.body.name,
+            avatar: 'kinkon241992.jpg'
+        });
         res.sendfile('footerMessage.html');
     }
 });
 
-var users = [];
+var userNames = [];
+var listUsers = [];
 var msgs = [];
 var id = 1;
 io.on('connection', (socket) => {
+
+    socket.on('joinChat', () => {
+        // Send new user info to other clients
+        var userInf = {
+            userName: sess.user,
+            avatar: 'kinkon241992.jpg'
+        };
+        socket.broadcast.emit('newUser', userInf);
+        // send list user for new client
+        socket.emit('lstUser', JSON.stringify(listUsers));
+    });
 
     socket.on('msg', (data) => {
         var date = new Date();
