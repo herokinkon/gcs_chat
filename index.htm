@@ -6,57 +6,33 @@
 </head>
 <script src="/socket.io/socket.io.js"></script>
 
-<script>
-  var socket = io();
-
-  function setUsername() {
-    socket.emit('setUsername', document.getElementById('name').value);
-  };
-
-  socket.on('userSet', function (data) {
-    user = data.username;
-    document.body.innerHTML =
-      '<input type = "text" id = "message">\
-         <button type = "button" name = "button" onclick = "sendMessage()">Send</button>\
-         <div id = "message-container"></div>';
-  });
-
-  function sendMessage() {
-    var msg = document.getElementById('message').value;
-    if (msg) {
-      socket.emit('msg', {
-        message: msg,
-        user: user
-      });
-    }
-  }
-
-  socket.on('newMsg', function (data) {
-    if (user) {
-      document.getElementById('message-container').innerHTML += '<div><b>' +
-        data.user + '</b>: ' + data.message + '</div>'
-    }
-  })
-</script>
-
 <body>
-  <form action="/login" method="post">
+  <form action="/" method="post" enctype="multipart/form-data">
     <input type="text" name="name" id="name" value="" placeholder="Enter your name!">
     <button type="submit" name="button">Let me chat!</button>
-    <p></p>
-    <input type="file" id="avatar" name="avatar" onchange="validate_fileupload(this.value);">
+    <br />
+    <input type="file" id="avatar" name="avatar" onchange="validate_fileupload(this);">
   </form>
 </body>
 
 <script>
-  function validate_fileupload(fileName) {
-    var allowed_extensions = ["jpg", "png", "gif", "ico"];
-    var file_extension = fileName.split('.').pop().toLowerCase();
+  function validate_fileupload(file) {
+    var fileName = file.value;
 
+    var allowed_extensions = ["jpg","jpeg", "png", "gif", "ico"];
+    var file_extension = fileName.split('.').pop().toLowerCase();
+    var FileSize = file.files[0].size / 1024 / 1024;
     for (var i = 0; i <= allowed_extensions.length; i++) {
       if (allowed_extensions.indexOf(file_extension) == -1) {
+        alert('Invalid File Type');
         document.getElementById('avatar').value = "";
+        return;
       }
+    }
+
+    if (FileSize > 5) {
+      alert('File size doesnot exceed 5MB');
+      document.getElementById('avatar').value = "";
     }
   }
 </script>

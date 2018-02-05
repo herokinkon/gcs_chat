@@ -4,7 +4,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Checkout example for Bootstrap</title>
+    <title>GCS_Chat</title>
 
     <!-- Bootstrap core CSS -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -13,9 +13,33 @@
     <link href="css/dashboard.css" rel="stylesheet">
 
     <link href="css/offcanvas.css" rel="stylesheet">
+    <script src="js/jquery.min.js"></script>
+    <script>
+        $(document).ready(() => {
+            $.post('/getUser', (data) => {
+                var template = $('#userInfoTemplate').html();
+                var temp = Mustache.render(template, data);
+                $('#userPro5').append(temp);
+            });
+        });
+    </script>
 </head>
 
+
+<script type="text-template" id="userInfoTemplate">
+    <a class="navbar-brand col-sm-3 col-md-3 mr-0 py-2" href="localhost:8888/profile/{{userId}}" style="overflow: hidden">
+        <img id="user" class="mr-1" src="avatar/{{avatar}}" alt="" width="32" height="32">{{userName}}</a>
+    <ul class="navbar-nav pl-3 pr-4">
+        <li class="nav-item text-nowrap">
+            <a class="nav-link" href="#">Sign out</a>
+        </li>
+    </ul>
+</script>
+
 <body>
+    <nav id="userPro5" class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 row justify-content-end">
+    </nav>
+
     <div class="container-fluid">
         <div class="row">
             <nav class="col-md-2 d-none d-md-block bg-light sidebar">
@@ -65,12 +89,15 @@
 
         // Add user
         socket.on('lstUser', (data) => {
+            var username = $('#user').val();
             var users = JSON.parse(data);
             users.forEach(user => {
-                var template = document.getElementById('userItem').innerHTML;
-                var temp = Mustache.render(template, user);
-                var node = document.createRange().createContextualFragment(temp);
-                document.getElementById('userGroup').appendChild(node);
+                if (username != user.userName) {
+                    var template = document.getElementById('userItem').innerHTML;
+                    var temp = Mustache.render(template, user);
+                    var node = document.createRange().createContextualFragment(temp);
+                    document.getElementById('userGroup').appendChild(node);
+                }
             });
         });
 
@@ -90,7 +117,7 @@
 
     <script type="text/template" id="msgLine">
         <div class="d-flex align-items-center p-2 mt-1 rounded box-shadow">
-            <img class="mr-3" src="kinkon241992.jpg" alt="" width="48" height="48">
+            <img class="mr-3" src="avatar/{{avatar}}" alt="" width="48" height="48">
             <div class="lh-150">
                 <div class="row">
                     <h6 class="mb-0 lh-150 col-auto pr-2">{{user}}</h6>
