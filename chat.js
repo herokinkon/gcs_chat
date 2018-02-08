@@ -4,6 +4,7 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var body = require('body-parser');
 var cookie = require('cookie-parser');
+var sharedsession = require("express-socket.io-session");
 
 var multer = require('multer');
 var session = require("express-session")({
@@ -15,6 +16,11 @@ var session = require("express-session")({
 // Use express-session middleware for express
 app.use(session);
 app.use(cookie());
+// Use shared session middleware for socket.io
+// setting autoSave:true
+io.use(sharedsession(session, {
+    autoSave: true
+}));
 
 var fs = require('fs');
 
@@ -29,11 +35,8 @@ app.use(body.urlencoded({
 // Public folder for client
 app.use(express.static('public'));
 
+// Home
 app.get('/', (req, res) => {
-    // res.sendfile('footerMessage.html');
-    // var user = getUserInfo(req.ip);
-    // req.session.test = 'test message';
-    // req.cookies.test = 'test';
     if (req.session.name != null) {
         res.sendfile('footerMessage.html');
     } else {
@@ -41,6 +44,7 @@ app.get('/', (req, res) => {
     }
 });
 
+// Get user information
 app.post('/getUser', (req, res) => {
     var userName = req.session.name;
     var avatar = req.session.avatar;
@@ -50,19 +54,26 @@ app.post('/getUser', (req, res) => {
     });
 });
 
+// Login user
 app.post('/', (req, res) => {
     if (userNames.indexOf(req.body.name) > -1) {
         res.send('Existed user');
     } else if (req.body.name.trim() != '') {
-        persistAvatar(req);
+        var avatar;
+        if (req.files[0] == null) {
+            avatar = "user.png";
+        } else {
+            avatar = req.files[0].filename;
+            persistAvatar(req);
+        }
         userNames.push(req.body.name);
         listUsers.push({
             id: req.ip,
             userName: req.body.name,
-            avatar: req.files[0].filename
+            avatar: avatar
         });
         req.session.name = req.body.name;
-        req.session.avatar = req.files[0].filename;
+        req.session.avatar = avatar;
         res.sendfile('footerMessage.html');
         console.log('finish request');
     }
@@ -73,12 +84,18 @@ var listUsers = [];
 var msgs = [];
 var id = 1;
 io.on('connection', (socket) => {
-    socket.on('joinChat', () => {
+    socket.on('joinChat', (data) => {
         // Send new user info to other clients
-        var userInf = getUserInfo(socket.handshake.address);
-        socket.broadcast.emit('newUser', userInf);
+        socket.handshake.session.user = data.userName;
+        socket.handshake.session.avatar = data.avatar;
+        socket.broadcast.emit('newUser', data);
         // send list user for new client
         socket.emit('lstUser', JSON.stringify(listUsers));
+
+        // Send old chat message
+        if (msgs.length != 0) {
+            socket.emit('lstMsg', "JSON.stringify(msgs)");
+        }
     });
 
     socket.on('msg', (data) => {
@@ -88,22 +105,20 @@ io.on('connection', (socket) => {
             minute: '2-digit',
             hour12: true
         });
-        var userInf = getUserInfo(socket.handshake.address);
 
         var dat = {
             id: id,
-            user: userInf.user,
+            user: socket.handshake.session.user,
             time: time,
-            message: data,
-            avatar: userInf.avatar
+            message: data.msg,
+            avatar: socket.handshake.session.avatar
         };
         id++;
         io.sockets.emit('newMsg', dat);
-        if (msgs.length == 5) {
+        msgs.push(dat);
+        if (msgs.length % 10 == 0) {
             persistMessageLog(msgs);
             msgs = [];
-        } else {
-            msgs.push(dat);
         }
     });
 
@@ -116,7 +131,7 @@ http.listen(8888, () => {
 
 function persistMessageLog(...data) {
     var str = JSON.stringify(data);
-    fs.writeFile("chatlog.txt", str);
+    fs.appendFile("chatlog.txt", str, () => {});
 }
 
 function persistAvatar(req) {
@@ -129,17 +144,4 @@ function persistAvatar(req) {
             }
         });
     });
-}
-
-function getUserInfo(address) {
-
-    for (var user in listUsers) {
-        if (listUsers[user].id == address) {
-            var info = {
-                userName: listUsers[user].userName,
-                avatar: listUsers[user].avatar
-            };
-            return info;
-        }
-    }
 }

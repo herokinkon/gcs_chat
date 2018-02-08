@@ -20,6 +20,9 @@
                 var template = $('#userInfoTemplate').html();
                 var temp = Mustache.render(template, data);
                 $('#userPro5').append(temp);
+                addUser(data);
+                var socket = io();
+                socket.emit('joinChat', data);
             });
         });
     </script>
@@ -27,8 +30,8 @@
 
 
 <script type="text-template" id="userInfoTemplate">
-    <a class="navbar-brand col-sm-3 col-md-3 mr-0 py-2" href="localhost:8888/profile/{{userId}}" style="overflow: hidden">
-        <img id="user" class="mr-1" src="avatar/{{avatar}}" alt="" width="32" height="32">{{userName}}</a>
+    <a id="user" class="navbar-brand col-sm-3 col-md-3 mr-0 py-2" href="localhost:8888/profile/{{userId}}" style="overflow: hidden">
+        <img class="mr-1" src="avatar/{{avatar}}" alt="" width="32" height="32">{{userName}}</a>
     <ul class="navbar-nav pl-3 pr-4">
         <li class="nav-item text-nowrap">
             <a class="nav-link" href="#">Sign out</a>
@@ -37,20 +40,20 @@
 </script>
 
 <body>
-    <nav id="userPro5" class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 row justify-content-end">
+    <nav id="userPro5" class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 row justify-content-end">
     </nav>
 
-    <div class="container-fluid">
+    <div class="container-fluid mt-3">
         <div class="row">
             <nav class="col-md-2 d-none d-md-block bg-light sidebar">
-                <div class="sidebar-sticky">
+                <div class="sidebar-sticky mt-3">
                     <ul id="userGroup" class="nav flex-column">
                     </ul>
                 </div>
             </nav>
 
             <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
-                <ul id="msgArea" style="overflow-y: scroll;height: 85%" class="list-group content">
+                <ul id="msgArea" class="list-group content mb-5 mt-2">
 
                 </ul>
 
@@ -69,30 +72,49 @@
             if (e.keyCode == 13) {
                 var socket = io();
                 var msg = document.getElementById('input-message').value;
-                document.getElementById('input-message').value = '';
-                socket.emit('msg', msg);
+                if (msg.trim() != '') {
+                    document.getElementById('input-message').value = '';
+                    var user = document.getElementById('user').value;
+                    socket.emit('msg', {
+                        user: user,
+                        msg: msg
+                    });
+                }
             }
         }
 
         var socket = io();
         socket.on('newMsg', (data) => {
+            console.log(data);
             var template = document.getElementById('msgLine').innerHTML;
             var temp = Mustache.render(template, data);
             var node = document.createRange().createContextualFragment(temp);
             document.getElementById('msgArea').appendChild(node);
         });
+
+        socket.on('lstMsg', (data) => {
+            console.log(data);
+            var msgs = JSON.parse(data);
+            msgs.forEach(msg => {
+                var template = document.getElementById('msgLine').innerHTML;
+                var temp = Mustache.render(template, msg);
+                var node = document.createRange().createContextualFragment(temp);
+                document.getElementById('msgArea').appendChild(node);
+            });
+        });
     </script>
 
     <script>
         var socket = io();
-        socket.emit('joinChat', '');
 
         // Add user
         socket.on('lstUser', (data) => {
-            var username = $('#user').val();
+            var username = $('#user').text().trim();
             var users = JSON.parse(data);
+            console.log(data);
+            alert('t');
             users.forEach(user => {
-                if (username != user.userName) {
+                if (username != user.userName.trim()) {
                     var template = document.getElementById('userItem').innerHTML;
                     var temp = Mustache.render(template, user);
                     var node = document.createRange().createContextualFragment(temp);
@@ -103,11 +125,18 @@
 
         // Add user
         socket.on('newUser', (data) => {
+            var user = $('#user').text().trim();
+            if (data.userName.trim().localeCompare(user)) {
+                addUser(data);
+            }
+        });
+
+        function addUser(data) {
             var template = document.getElementById('userItem').innerHTML;
             var temp = Mustache.render(template, data);
             var node = document.createRange().createContextualFragment(temp);
             document.getElementById('userGroup').appendChild(node);
-        });
+        }
 
         // Remoev user
         socket.on('rmUser', (data) => {
