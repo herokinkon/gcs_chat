@@ -4,12 +4,74 @@ mongoosedb.connect('mongodb://localhost/gcs_chat_db');
 var db = mongoosedb.connection;
 db.on('error', console.error);
 
-exports.test = function test() {
-    console.log('Test');
+// User Session Schema
+var schema = mongoosedb.Schema;
+var userSchema = new schema({
+    sessionId: String,
+    userName: String,
+    socketIds: [String],
+    avatar: String
+});
+// user Session model
+var userModel = mongoosedb.model("users", userSchema);
+
+exports.newSession = function createNewSession(sessionId, user, avatar) {
+    var user1 = new userModel({
+        sessionId: sessionId,
+        userName: user,
+        avatar: avatar
+    }).save();
+    console.log('Finish Create new session for ' + user);
 };
 
-exports.demo = function demo() {
-    console.log('Demo');
+exports.removeSession = function createNewSession(user) {
+    userModel.remove({
+        'userName': user
+    }, (err) => {
+        console.log(err);
+    });
 };
 
-module.exports = db;
+exports.newSocket = function createNewSocketForUser(socketId, userN) {
+    userModel.findOne({
+        'userName': userN
+    }, (err, result) => {
+        if (err) return handleError(err);
+        result.socketIds.push(socketId);
+        result.save();
+        console.log("Save new socket id: " + result.socketIds);
+    });
+};
+
+
+exports.removeSocket = function removeSocketForUser(socketId, userN) {
+    userModel.findOne({
+        'userName': userN
+    }, (err, result) => {
+        if (err) return handleError(err);
+        if (result.socketIds != null) {
+            result.socketIds.remove(socketId);
+            result.save();
+        }
+    });
+};
+
+exports.getListSockets = function getListSockets(userN) {
+    return new Promise((resolve, reject) => {
+        userModel.findOne({
+            'userName': userN
+        }, (err, result) => {
+            if (err) return reject(err);
+            resolve(result);
+        });
+    });
+};
+
+exports.findUser = function findUser(userN) {
+    userModel.findOne({
+        'userName': userN
+    }, (err, result) => {
+        if (err) return handleError(err);
+        return result;
+    });
+};

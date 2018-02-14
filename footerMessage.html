@@ -12,29 +12,32 @@
     <!-- Custom styles for this template -->
     <link href="css/dashboard.css" rel="stylesheet">
 
+    <!-- Custom styles for this template -->
     <link href="css/offcanvas.css" rel="stylesheet">
-    <script src="js/jquery.min.js"></script>
+    <script src="js/jquery.js"></script>
+
+    <script src="js/bootstrap.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- Template Engine -->
+    <script src="js/mustache.min.js"></script>
     <script>
-        $(document).ready(() => {
-            $.post('/getUser', (data) => {
-                var template = $('#userInfoTemplate').html();
-                var temp = Mustache.render(template, data);
-                $('#userPro5').append(temp);
-                addUser(data);
-                var socket = io();
-                socket.emit('joinChat', data);
-            });
-        });
+        // Define constant for other JS file access.
+        // Open a socket to server
+        const socket = io();
     </script>
+    <!-- Hanlder for App -->
+    <script src="js/socketHandler.js"></script>
+    <script src="js/imageProcessing.js"></script>
+
 </head>
 
-
+<!-- User profile in top header template -->
 <script type="text-template" id="userInfoTemplate">
     <a id="user" class="navbar-brand col-sm-3 col-md-3 mr-0 py-2" href="localhost:8888/profile/{{userId}}" style="overflow: hidden">
         <img class="mr-1" src="avatar/{{avatar}}" alt="" width="32" height="32">{{userName}}</a>
     <ul class="navbar-nav pl-3 pr-4">
         <li class="nav-item text-nowrap">
-            <a class="nav-link" href="#">Sign out</a>
+            <a class="nav-link" href="/logout">Sign out</a>
         </li>
     </ul>
 </script>
@@ -43,107 +46,59 @@
     <nav id="userPro5" class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 row justify-content-end">
     </nav>
 
-    <div class="container-fluid mt-3">
-        <div class="row">
+    <div class="container-fluid">
+        <div class="row  mt-3">
             <nav class="col-md-2 d-none d-md-block bg-light sidebar">
-                <div class="sidebar-sticky mt-3">
+                <div class="sidebar-sticky">
                     <ul id="userGroup" class="nav flex-column">
                     </ul>
                 </div>
             </nav>
-
             <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4">
-                <ul id="msgArea" class="list-group content mb-5 mt-2">
+                <div class="ss-content" style="max-height: 85%;overflow-y: auto;">
+                    <ul id="msgArea" class="list-group content mb-5 mt-2">
 
-                </ul>
-
-                <input type="text" class="form-control" style="position: fixed;bottom: 10px;z-index: 1030" id="input-message" placeholder="Input your message here !"
-                    onkeypress="sendMsg(event);">
+                    </ul>
+                </div>
+                <div class="input-group" style="position: fixed;bottom: 10px;z-index: 1030;width: 80%">
+                    <input type="text" class="form-control" id="input-message" placeholder="Input your message here !" onkeypress="sendMsg(event);">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" data-toggle="modal" data-target="#inserImgModal" type="button"><img src="/icon/images.png" width="32" height="32" ></button>
+                    </div>
+                </div>
             </main>
         </div>
     </div>
 
+    <!-- Modal Insert Image -->
+    <div class="modal fade" id="inserImgModal" tabindex="-1" role="dialog" aria-labelledby="inserImgModal" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                        <label class="btn btn-outline-primary active" onclick="$('#imgLinkTextbox').hide();$('#imgUploadTextBox').show();">
+                            <input type="radio" name="options" id="optUploadImg" autocomplete="off" checked> Upload Image
+                        </label>
+                        <label class="btn btn-outline-primary" onclick="$('#imgUploadTextBox').hide();$('#imgLinkTextbox').show();">
+                            <input type="radio" name="options" id="optAttachLink" autocomplete="off"> Attach Link
+                        </label>
+                    </div>
 
-    <script src="js/bootstrap.min.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="js/mustache.min.js"></script>
+                    <input class="mt-2" id="imgLinkTextbox" type="text" style="width: 100%" placeholder="Input your picture link here !">
+                    <input class="mt-2" id="imgUploadTextBox" type="file" style="width: 100%" onchange="validate_fileupload(this);">
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="insertImage();">Insert</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
-        function sendMsg(e) {
-            if (e.keyCode == 13) {
-                var socket = io();
-                var msg = document.getElementById('input-message').value;
-                if (msg.trim() != '') {
-                    document.getElementById('input-message').value = '';
-                    var user = document.getElementById('user').value;
-                    socket.emit('msg', {
-                        user: user,
-                        msg: msg
-                    });
-                }
-            }
-        }
-
-        var socket = io();
-        socket.on('newMsg', (data) => {
-            console.log(data);
-            var template = document.getElementById('msgLine').innerHTML;
-            var temp = Mustache.render(template, data);
-            var node = document.createRange().createContextualFragment(temp);
-            document.getElementById('msgArea').appendChild(node);
-        });
-
-        socket.on('lstMsg', (data) => {
-            console.log(data);
-            var msgs = JSON.parse(data);
-            msgs.forEach(msg => {
-                var template = document.getElementById('msgLine').innerHTML;
-                var temp = Mustache.render(template, msg);
-                var node = document.createRange().createContextualFragment(temp);
-                document.getElementById('msgArea').appendChild(node);
-            });
-        });
+        // Hide Link textbox after finish render elemetn
+        $('#imgLinkTextbox').hide();
     </script>
-
-    <script>
-        var socket = io();
-
-        // Add user
-        socket.on('lstUser', (data) => {
-            var username = $('#user').text().trim();
-            var users = JSON.parse(data);
-            console.log(data);
-            alert('t');
-            users.forEach(user => {
-                if (username != user.userName.trim()) {
-                    var template = document.getElementById('userItem').innerHTML;
-                    var temp = Mustache.render(template, user);
-                    var node = document.createRange().createContextualFragment(temp);
-                    document.getElementById('userGroup').appendChild(node);
-                }
-            });
-        });
-
-        // Add user
-        socket.on('newUser', (data) => {
-            var user = $('#user').text().trim();
-            if (data.userName.trim().localeCompare(user)) {
-                addUser(data);
-            }
-        });
-
-        function addUser(data) {
-            var template = document.getElementById('userItem').innerHTML;
-            var temp = Mustache.render(template, data);
-            var node = document.createRange().createContextualFragment(temp);
-            document.getElementById('userGroup').appendChild(node);
-        }
-
-        // Remoev user
-        socket.on('rmUser', (data) => {
-            document.getElementById(data).remove();
-        });
-    </script>
-
+    <!-- Message Line Template -->
     <script type="text/template" id="msgLine">
         <div class="d-flex align-items-center p-2 mt-1 rounded box-shadow">
             <img class="mr-3" src="avatar/{{avatar}}" alt="" width="48" height="48">
@@ -154,12 +109,13 @@
                 </div>
 
                 <p class="media-body pb-3 pl-2 mb-0 small lh-125 border-bottom border-gray">
-                    {{message}}
+                    {{{message}}}
                 </p>
             </div>
         </div>
     </script>
 
+    <!-- User item in user list -->
     <script type="text/template" id="userItem">
         <li id="{{id}}" class="nav-item">
             <a class="nav-link active pb-1 pt-0" href="#">
