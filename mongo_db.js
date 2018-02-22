@@ -4,6 +4,10 @@ mongoosedb.connect('mongodb://localhost/gcs_chat_db');
 var db = mongoosedb.connection;
 db.on('error', console.error);
 
+/**
+ * User Collection
+ */
+
 // User Session Schema
 var schema = mongoosedb.Schema;
 var userSchema = new schema({
@@ -56,7 +60,7 @@ exports.removeSocket = function removeSocketForUser(socketId, userN) {
     });
 };
 
-exports.getListSockets = function getListSockets(userN) {
+exports.getUserInfo = function getUserInfo(userN) {
     return new Promise((resolve, reject) => {
         userModel.findOne({
             'userName': userN
@@ -67,11 +71,42 @@ exports.getListSockets = function getListSockets(userN) {
     });
 };
 
-exports.findUser = function findUser(userN) {
-    userModel.findOne({
-        'userName': userN
-    }, (err, result) => {
-        if (err) return handleError(err);
-        return result;
+exports.getListUser = function getListUser() {
+    return new Promise((resolve, reject) => {
+        userModel.find((err, result) => {
+            if (err) return reject(err);
+            resolve(result);
+        });
     });
 };
+
+/**
+ * Message collection
+ */
+
+// Message schema
+var msgSchema = new schema({
+    id: Number,
+    time: String,
+    user: String,
+    message: String,
+    avatar: String
+});
+// user Session model
+var msgModel = mongoosedb.model("message", msgSchema);
+// Get list message
+exports.getListMessage = function getListMessage() {
+    return new Promise((resolve, reject) => {
+        msgModel.find((err, result) => {
+            if (err) return reject(err);
+            resolve(result);
+        });
+
+    });
+}
+
+// Store message in db
+exports.storeMessage = function storeMessage(message) {
+    var messageModel = new msgModel(message);
+    messageModel.save();
+}

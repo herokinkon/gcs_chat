@@ -40,9 +40,9 @@ app.use(express.static('public'));
 // Home
 app.get('/', (req, res) => {
     if (req.session.name != null) {
-        res.sendfile('footerMessage.html');
+        res.sendFile(__dirname + '/footerMessage.html');
     } else {
-        res.sendfile('index.htm');
+        res.sendFile(__dirname + '/index.htm');
     }
 });
 
@@ -58,10 +58,10 @@ app.post('/getUser', (req, res) => {
 
 // Login user
 app.post('/', (req, res) => {
-    db.getListSockets(req.body.name).then((result) => {
+    db.getUserInfo(req.body.name).then((result) => {
         if (req.session.name != null) {
-            res.sendfile('footerMessage.html');
-        } else if (result.userName != null) {
+            res.sendFile(__dirname + '/footerMessage.html');
+        } else if (result != null) {
             res.send('Existed user');
         } else if (req.body.name.trim() != '') {
             var avatar;
@@ -74,7 +74,7 @@ app.post('/', (req, res) => {
 
             req.session.name = req.body.name;
             req.session.avatar = avatar;
-            res.sendfile('footerMessage.html');
+            res.sendFile(__dirname + '/footerMessage.html');
             db.newSession(req.session.id, req.session.name, avatar);
             console.log('finish request');
         }
@@ -91,7 +91,7 @@ app.post('/uploadImage', (req, res) => {
 
 app.get('/logout', (req, res) => {
     var userName = req.session.name;
-    db.getListSockets(userName).then((result) => {
+    db.getUserInfo(userName).then((result) => {
         for (var i = 0; i < result.socketIds.length; i++) {
             console.log("Destroy socket");
             io.sockets.connected[result.socketIds[i]].handshake.session.user = null;
@@ -105,7 +105,6 @@ app.get('/logout', (req, res) => {
 
 var userNames = [];
 var listUsers = [];
-var msgs = [];
 var id = 1;
 io.on('connection', (socket) => {
     socket.on('joinChat', (data) => {
@@ -116,16 +115,23 @@ io.on('connection', (socket) => {
             socket.handshake.session.avatar = data.avatar;
             socket.broadcast.emit('newUser', data);
         }
+
+        // Send old chat message
+        db.getListMessage().then((msgs) => {
+            if (msgs != null) {
+                socket.emit('lstMsg', JSON.stringify(msgs));
+            }
+        });
+
         // send list user for new client
-        socket.emit('lstUser', JSON.stringify(listUsers));
+        db.getListUser().then((users) => {
+            if (users != null) {
+                socket.emit('lstUser', JSON.stringify(users));
+            }
+        });
 
         // Add socket id to of user
         db.newSocket(socket.id, data.userName);
-
-        // Send old chat message
-        if (msgs.length != 0) {
-            socket.emit('lstMsg', JSON.stringify(msgs));
-        }
     });
 
     socket.on('msg', (data) => {
@@ -145,11 +151,7 @@ io.on('connection', (socket) => {
         };
         id++;
         io.sockets.emit('newMsg', dat);
-        msgs.push(dat);
-        if (msgs.length % 15 == 0) {
-            persistMessageLog(msgs);
-            // msgs = [];
-        }
+        db.storeMessage(dat);
     });
 
     socket.on("disconnect", () => {
