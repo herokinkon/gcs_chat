@@ -20,6 +20,11 @@
     <script src="/socket.io/socket.io.js"></script>
     <!-- Template Engine -->
     <script src="js/mustache.min.js"></script>
+
+    <!-- Emoji -->
+    <script src="js/emojione.js"></script>
+    <link href="css/emojionearea.min.css" rel="stylesheet">
+    <script src="js/emojionearea.min.js"></script>
     <script>
         // Define constant for other JS file access.
         // Open a socket to server
@@ -61,9 +66,11 @@
                     </ul>
                 </div>
                 <div class="input-group" style="position: fixed;bottom: 10px;z-index: 1030;width: 80%">
-                    <input type="text" class="form-control" id="input-message" placeholder="Input your message here !" onkeypress="sendMsg(event);">
+                    <input type="text" class="form-control" id="input-message" placeholder="Input your message here !">
                     <div class="input-group-append">
-                        <button class="btn btn-outline-secondary" data-toggle="modal" data-target="#inserImgModal" type="button"><img src="/icon/images.png" width="32" height="32" ></button>
+                        <button class="btn btn-outline-secondary" data-toggle="modal" data-target="#inserImgModal" type="button">
+                            <img src="/icon/images.png" width="24" height="24">
+                        </button>
                     </div>
                 </div>
             </main>

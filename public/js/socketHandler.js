@@ -1,4 +1,20 @@
 $(document).ready(() => {
+    $("#input-message").emojioneArea({
+        shortnames: true,
+        search: false,
+        textcomplete: {
+            maxCount: 5,
+            placement: 'top'
+        },
+        events: {
+            keydown: function (editor, event) {
+                console.log(this);
+                this.setText('');
+                sendMsg(event, editor);
+            }
+        }
+    });
+
     $.post('/getUser', (data) => {
         var template = $('#userInfoTemplate').html();
         var temp = Mustache.render(template, data);
@@ -78,11 +94,12 @@ socket.on('rmUser', (data) => {
 });
 
 // Send message
-function sendMsg(e) {
+function sendMsg(e, editor) {
     if (e.keyCode == 13) {
-        var msg = document.getElementById('input-message').value;
+        var msg = editor.html();
         if (msg.trim() != '') {
-            document.getElementById('input-message').value = '';
+
+            // document.getElementById('input-message').innerHTML = '';
             var user = document.getElementById('user').value;
             socket.emit('msg', {
                 user: user,
